@@ -21,29 +21,51 @@ jobs:
         with:
           node-version: '20.x'
 
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Build Next.js Application
-        run: npm run build
-
-      - name: Prepare Deployment Package
+      - name: npm install, build, and test
         run: |
-          mkdir -p deployment
-          cp -R .next deployment/.next
-          cp -R public deployment/public
-          cp package.json deployment/
-          cp package-lock.json deployment/
-          cp server.js deployment/
-  
-      - name: Zip Deployment Package
-        run: |
-          cd deployment
-          zip -r ../deployment.zip .
-  
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v2
+          npm install
+          npm run build --if-present
+          npm run test --if-present
+
+      - name: Zip artifact for deployment
+        run: zip release.zip ./* -r
+
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v4
         with:
-          app-name: 'YOUR_AZURE_APP_SERVICE_NAME'  # Replace with your Azure App Service name
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: './deployment.zip'
+          name: node-app
+          path: release.zip
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: 'Production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    permissions:
+      id-token: write #This is required for requesting the JWT
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: node-app
+
+      - name: Unzip artifact for deployment
+        run: unzip release.zip
+      
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_AC9B2B3CC9A3405B921179704E9BFF2A }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_F70086F396ED44D6A1E2F91E4A84853B }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_89B7734B49A04A848CB1B93D3F06893F }}
+
+      - name: 'Deploy to Azure Web App'
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'accretewebsite'
+          slot-name: 'Production'
+          package: .
+          
