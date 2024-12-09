@@ -32,8 +32,9 @@ jobs:
         
     - name: copy static files
       run: |
-        cp -R ./public ./.next/standalone/piblic
+        cp -R ./public ./.next/standalone/public  # Fix typo in 'public'
         cp -R ./.next/static ./.next/standalone/.next/static
+        cp ./.next/standalone/server.js ./.next/standalone/  # Ensure server.js is copied
 
     - name: Upload Artifact for deployment job
       uses: actions/upload-artifact@v4
