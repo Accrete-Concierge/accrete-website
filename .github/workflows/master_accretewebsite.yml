@@ -32,6 +32,10 @@ jobs:
     - name: Build Next.js app
       run: npm run build
 
+    # Archive the built content
+    - name: Archive production artifacts
+      run: zip -r build.zip . -x '*.git*'
+
     # Login to Azure
     - name: 'Login via Azure CLI'
       uses: azure/login@v1
