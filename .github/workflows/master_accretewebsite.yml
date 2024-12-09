@@ -28,11 +28,18 @@ jobs:
     - name: Install dependencies
       run: |
         npm install
-        npm install next
         npm run build
-        npm run test
-      
+        
+    - name: copy static files
+      run: |
+        cp -R ./public ./.next/standalone/piblic
+        cp -R ./.next/static ./.next/standalone/.next/static
 
+    - name: Upload Artifact for deployment job
+      uses: actions/upload-artifact@v4
+      with:
+        name: app
+        path: .next/standalone
 
     # # Build Next.js app
     # - name: Build Next.js app
